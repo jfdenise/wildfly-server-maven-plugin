@@ -1,0 +1,15 @@
+## Maven plugin
+
+This chapter is dedicated to the Maven plugin that can be used to build WildFly Server installation. Maven
+coordinates of the Maven plugin artifact are
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-server-maven-plugin</artifactId>
+    <version>{revnumber}</version>
+</dependency>
+----
+
+include::goals/index.adoc[]

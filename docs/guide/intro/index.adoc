@@ -1,0 +1,212 @@
+[[wildfly_server_introduction]]
+## Introduction
+
+The WildFly Server Maven plugin is aimed to build a WildFly server. 
+Such server contains both the server and your packaged application (a JAR, an EAR or a WAR).
+Once the application has been built and packaged, you can start the server using the following command:
+
+```
+./target/server/standalone.sh
+```
+
+[[wildfly_server_examples]]
+## Examples
+
+The examples https://github.com/jfdenise/wildfly-server-maven-plugin/tree/{project-branch}/examples[directory] 
+contains Maven example projects that highlight various usages of the WildFly Server plugin. Build and run these projects
+to familiarize yourself with the Maven plugin. A good example to start with is the 
+https://github.com/jfdenise/wildfly-server-maven-plugin/tree/{project-branch}/examples/jaxrs[jaxrs] example.
+
+[[wildfly_server_examples_download]]
+### Downloading the examples
+
+* Clone the wildfly-server-maven-plugin repository: _git clone -b {project-branch} https://github.com/jfdenise/wildfly-server-maven-plugin_
+
+* _cd wildfly-server-maven-plugin/examples_
+
+* Each example directory contains a README file with instructions on how to build and run the example.
+
+
+[[wildfly_server_composing_custom_server_galleon]]
+## Composing custom server with Galleon layers
+When building a server you have the ability to select the set of https://docs.wildfly.org/{wildfly-major}/Galleon_Guide.html#wildfly_galleon_layers[WildFly Galleon layers] 
+you want to see present in theserver. Selecting a subset of server features has an impact on the server xml configuration 
+and the set of installed JBoss modules. By selecting the subset required by your application you will reduce the server installation size, server configuration content and memory footprint.
+
+You are not limited to the https://docs.wildfly.org/{wildfly-major}/Galleon_Guide.html#wildfly_galleon_layers[WildFly Galleon layers] , you can combine other third parties Galleon layers compatible with 
+WildFly (eg: https://github.com/wildfly-extras/wildfly-datasources-galleon-pack[WildFly database drivers and datasources layers]). 
+
+[[wildfly_server_composing_custom_server_galleon_version]]
+### Specifying the WildFly server version to use
+
+You need to provide a reference to the WildFly Galleon producer that contains the layers you want to use. This can be done in 3 ways.
+
+[[wildfly_server_composing_custom_server_galleon_fpl]]
+#### Providing WildFly Galleon feature-pack location
+
+That is the simplest way to reference a WildFly server. 
+The configuration element link:#featurePackLocation[feature-pack-location] contains this information.
+
+Some examples:
+
+* To provision a WildFly {wildfly-major} server: 
+
+[source,xml,subs=attributes+]
+----
+<feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#{wildfly-major}.0.0.Final</feature-pack-location>
+----
+
+* To provision the latest WildFly server: 
+
+[source,xml,subs=attributes+]
+----
+<feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)</feature-pack-location>
+----
+
+[[wildfly_server_composing_custom_server_galleon_feature_packs]]
+#### Providing a list of Galleon feature-packs
+
+In some cases you will want to combine Galleon layers from multiple sources. In this case you will use the link:#featurePacks[feature-packs] configuration element that contains a list 
+of feature-packs. For example, to provision Galleon layers from WildFly {wildfly-major} and WildFly extras datasources you would provide:
+
+[source,xml,subs=attributes+]
+----
+<feature-packs>
+    <feature-pack>
+        <location>wildfly@maven(org.jboss.universe:community-universe)#{wildfly-major}.0.0.Final</location>
+    </feature-pack>
+    <feature-pack>
+        <groupId>org.wildfly</groupId>
+        <artifactId>wildfly-datasources-galleon-pack</artifactId>
+        <version>2.0.3.Final</version>
+    </feature-pack>
+</feature-packs>
+----
+
+NB: The list of feature-packs can't be used in conjunction with link:#featurePackLocation[feature-pack-location] element.
+
+[[wildfly_server_composing_custom_server_galleon_provisioning_xml]]
+#### Providing a Galleon provisioning.xml file
+
+For advanced use cases you can fully control the Galleon provisioning by defining the file _galleon/provisioning.xml_. 
+_galleon_ directory must be located in the root directory of your Maven project. A custom file location can be set 
+thanks to the _provisioning-file_ plugin option. 
+
+[[wildfly_server_composing_custom_server_galleon_layers]]
+### Specifying the set of Galleon layers to use
+
+In order to include layers use the link:#layers[layers] configuration element.
+
+For example, to provision a server containing jaxrs and management support:
+
+[source,xml]
+----
+<layers>
+    <layer>jaxrs</layer>
+    <layer>management</layer>
+</layers>
+----
+
+[[wildfly_server_composing_custom_server_galleon_exclude_layers]]
+### Excluding Galleon layers
+
+In order to exclude layers that are not strictly required, use the link:#excludedLayers[excluded-layers] configuration element.
+
+For example, _jaxrs_ layer (that depends on _web-server_ layer) brings the deployment scanner. The deployment scanner being an optional dependency of the _web-server_ layer 
+it can be excluded:
+
+[source,xml]
+----
+<excluded-layers>
+    <layer>deployment-scanner</layer>
+</excluded-layers>
+----
+
+[[wildfly_server_url_context]]
+## URL context path of deployed application
+
+By default, a WAR deployed inside a WildFly server is located in the root context ('/'). This can be changed to the WAR file name by using the link:#contextRoot[context-root] configuration element.
+
+[[wildfly_server_hollow_server]]
+## Hollow Server
+
+If your use-case requires it, you can create a server that doesn't contain a deployment. It can be handy to re-use a server artifact with various deployments.
+Use the link:#hollowServer[hollow-server] configuration element to create a server containing no deployment.
+
+
+[[wildfly_server_configuring_build]]
+## Configuring the server during packaging
+
+In addition to Galleon layers that you can use to configure the server, you can fine tune the server during packaging.
+
+The Maven plugin allows you to:
+
+* Run https://docs.wildfly.org/{wildfly-major}/Admin_Guide.html#Command_Line_Interface[WildFly CLI] scripts.
+* Add extra content that you want to see packaged in the server (eg: _standalone/configuration/application-users.properties_, _standalone/configuration/keystore.jks_, ...).
+
+[[wildfly_server_configuring_build_cli]]
+### WildFly CLI execution during packaging
+
+Part of WildFly CLI command line tool has been integrated in the Maven plugin. The plugin supports execution of CLI script files with a limited set of CLI configuration items.
+
+CLI script files are text files that contain a sequence of WildFly CLI commands. Commands can be CLI defined commands 
+(some builtin commands allowing to achieve complex sequence of server operations) and generic management operations to be sent to the server. Some examples can
+be found in WildFly administration guide https://docs.wildfly.org/{wildfly-major}/Admin_Guide.html#CLI_Recipes[CLI recipes chapter].
+
+In the context of WildFly server plugin, the script does not need to contain commands to connect to the server or start an embedded server. 
+The Maven plugin handles that for you by starting an embedded server for each group of scripts.
+
+The plugin allows you to execute multiple group of scripts with different CLI contexts. 
+A group of scripts and its configuration are defined in a ```cli-session``` composed of:
+
+* ```<script-files>```: the list of paths to script files .
+* ```properties-file```: (optional) a path to a properties file that contains java properties that scripts can reference (using the syntax ```${my.prop}```). 
+For example, a command that sets the public inet-address to the value of ```all.addresses``` system property looks like: ```/interface=public:write-attribute(name=inet-address,value=${all.addresses})```
+* ```resolve-expressions```: (optional) a boolean indicating if system properties or 
+expressions are resolved before sending the operation requests to the server. Value is ```true``` by default.
+
+All scripts present in a ```cli-session``` are executed within a single CLI execution. An embedded server is started for each defined ```cli-session```.
+
+NB: The scripts are executed in the order they are defined in the plugin configuration. 
+
+CLI configuration example:
+
+[source,xml]
+----
+<cli-sessions>
+  <cli-session>
+    <script-files>
+        <script>../scripts/script1.cli</script>
+    </script-files>
+    <!-- We want the env variables to be resolved during server execution -->
+    <resolve-expressions>false</resolve-expressions>
+  </cli-session>
+  <cli-session>
+    <script-files>
+        <script>../scripts/script2.cli</script>
+    </script-files>
+    <properties-file>../scripts/cli.properties</properties-file>
+    <!-- We want the properties to be resolved during CLI execution (not actually needed, this is the default behavior) -->
+    <resolve-expressions>true</resolve-expressions>
+  </cli-session>
+</cli-sessions>
+----
+
+[[wildfly_server_troubleshooting]]
+## Troubleshooting
+
+### Out of Memory error when building
+
+When building a large number of projects in the same Maven session you can encounter OOM error, this can be solved in various ways:
+
+* You can increase the metaspace size of the Maven execution by setting the ```MAVEN_OPTS="-XX:MaxMetaspaceSize=<value>"``` environment variable.
+* Or you can configure the plugin to fork part of its execution in remote processes:
+[source,xml]
+----
+<configuration>
+  ...
+  <plugin-options>
+    <jboss-fork-embedded>true</jboss-fork-embedded>
+  </plugin-options>
+</configuration>
+----

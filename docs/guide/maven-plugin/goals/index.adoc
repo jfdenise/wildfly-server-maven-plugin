@@ -1,0 +1,11 @@
+### Goals overview
+
+[options="autowidth"]
+|===
+|<<_help>> |Prints help for the plugin.
+|<<_package>> |Build a WildFly bootable JAR.
+|===
+
+include::help/index.adoc[]
+include::package/index.adoc[]
+
