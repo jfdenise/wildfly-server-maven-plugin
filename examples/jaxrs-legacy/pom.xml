@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.wildfly.plugins.server.examples</groupId>
+    <artifactId>jaxrs-legacy</artifactId>
+    <version>1.0.0.Final</version>
+    <packaging>war</packaging>
+
+    <name>WildFly Bootable JAR - JAX-RS Example</name>
+    <description>An example of how to use JAX-RS resources</description>
+
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <layout>default</layout>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+            <id>redhat-ga</id>
+            <name>Redhat GA</name>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <failOnMissingWebXml>false</failOnMissingWebXml>
+        <plugin.fork.embedded>true</plugin.fork.embedded>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <scope>provided</scope>
+            <version>8.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-plugin</artifactId>
+                <version>4.2.8.Final</version>
+                <configuration>
+                    <install-dir>${project.build.directory}/server</install-dir>
+                    <plugin-options>
+                        <jboss-fork-embedded>true</jboss-fork-embedded>
+                        <optional-packages>passive+</optional-packages>
+                    </plugin-options>
+                    <feature-packs>
+                        <feature-pack>
+                            <location>wildfly@maven(org.jboss.universe:community-universe)</location>
+                            <inherit-packages>false</inherit-packages>
+                            <inherit-configs>false</inherit-configs>
+                        </feature-pack>
+                    </feature-packs>
+                    <configurations>
+                        <config>
+                            <model>standalone</model>
+                            <name>standalone.xml</name>
+                            <layers>
+                                <layer>jaxrs-server</layer>
+                            </layers>
+                        </config>
+                    </configurations>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>provision a server</id>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/server</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>extra-content</directory>
+                                </resource>
+                            </resources>
+                        </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>2.0.2.Final</version>
+                <configuration>
+                    <offline>true</offline>
+                    <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
+                    <jboss-home>target/server</jboss-home>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>cli</id>
+                        <goals>
+                            <goal>execute-commands</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <scripts>
+                                <!-- we would need a flag to resolve or not expressions -->
+                                <script>config.cli</script>
+                            </scripts>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>deploy</id>
+                        <goals>
+                            <goal>execute-commands</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <commands>
+                                <command>embed-server --server-config=standalone.xml</command>
+                                <command>deploy  target/jaxrs-legacy.war --name=jaxrs-legacy.war --runtime-name=ROOT.war </command>
+                                <command>stop-embedded-server</command>
+                            </commands>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

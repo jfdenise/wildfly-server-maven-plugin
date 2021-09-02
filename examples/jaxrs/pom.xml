@@ -40,6 +40,16 @@
                     <plugin-options>
                         <jboss-fork-embedded>${plugin.fork.embedded}</jboss-fork-embedded>
                     </plugin-options>
+                    <cli-sessions>
+                        <cli-session>
+                            <script-files>
+                                <script>config.cli</script>
+                            </script-files>
+                        </cli-session>
+                    </cli-sessions>
+                    <extra-server-content-dirs>
+                        <extra-content>extra-content</extra-content>
+                    </extra-server-content-dirs>
                 </configuration>
                 <executions>
                     <execution>

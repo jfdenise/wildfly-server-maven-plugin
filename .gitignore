@@ -25,3 +25,4 @@ hs_err_pid*
 /plugin/target/
 /examples/jaxrs/target
 /docs/target/
+/examples/jaxrs-legacy/target/
